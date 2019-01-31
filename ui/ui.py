@@ -12,13 +12,15 @@ badbrands = ['epiphone', 'guild', 'gretsch', 'jackson', 'ovation', 'prs', 'ricke
 
 app = Flask(__name__)
 
+api_client = None
+
 
 @app.route("/guitaradd", methods=['POST'])
 def guitaradd():
     name = request.form['name'].lower()
     brand = request.form['brand']
     body = {'kind': 'Guitar', 'spec': {'brand': brand, 'review': False}, 'apiVersion': '%s/%s' % (DOMAIN, VERSION), 'metadata': {'name': name, 'namespace': NAMESPACE}}
-    crds = client.CustomObjectsApi()
+    crds = client.CustomObjectsApi(api_client)
     try:
         crds.create_namespaced_custom_object(DOMAIN, VERSION, NAMESPACE, 'guitars', body)
         result = {'result': 'success'}
@@ -35,7 +37,7 @@ def guitaradd():
 @app.route("/guitardelete", methods=['POST'])
 def guitardelete():
     name = request.form['name']
-    crds = client.CustomObjectsApi()
+    crds = client.CustomObjectsApi(api_client)
     try:
         crds.delete_namespaced_custom_object(DOMAIN, VERSION, NAMESPACE, 'guitars', name, client.V1DeleteOptions())
         result = {'result': 'success'}
@@ -59,7 +61,7 @@ def guitarlist():
     """
     display guitars
     """
-    crds = client.CustomObjectsApi()
+    crds = client.CustomObjectsApi(api_client)
     guitars = crds.list_cluster_custom_object(DOMAIN, VERSION, 'guitars')["items"]
     guitars = sorted(guitars, key=lambda x: (x.get("spec")["brand"], x.get("metadata")["name"]))
     return render_template("guitarlist.html", title="Guitars", guitars=guitars)
@@ -75,10 +77,13 @@ def index():
 
 def run():
     if 'KUBERNETES_PORT' in os.environ:
-        # os.environ['KUBERNETES_SERVICE_HOST'] = 'kubernetes'
         config.load_incluster_config()
     else:
         config.load_kube_config()
+    configuration = client.Configuration()
+    configuration.assert_hostname = False
+    global api_client
+    api_client = client.api_client.ApiClient(configuration=configuration)
     app.run(host="0.0.0.0", port=9000)
     run()
 
