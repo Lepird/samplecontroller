@@ -47,6 +47,14 @@ def update_counters(brand, operation):
     config_map.data[brand] = str(count)
     print (brand + ' count= ' + str(count))
 
+    ## test multi-line
+
+    config_map.data["file.conf"] = "this is something\nand another\n    here is an indent"
+    config_map.data["file2.conf"] = """
+this is something
+and another
+    here is an indent
+"""
     if replace:
         print('replacing conf')
         client.CoreV1Api(api_client).replace_namespaced_config_map(name='guitar-conf',
@@ -74,11 +82,18 @@ def review_guitar(crds, obj, operation):
             obj["spec"]["comment"] = "nobody knows this brand"
 
         print("Updating: %s" % name)
-        crds.replace_namespaced_custom_object(DOMAIN, "v1", namespace, "guitars", name, obj)
+        #crds.replace_namespaced_custom_object(DOMAIN, "v1", namespace, "guitars", name, obj)
     update_counters(brand, operation)
 
 
 if __name__ == "__main__":
+    print(
+        """
+        asdasda
+asdasdasd
+adasdsad
+asdsadsad"""
+    )
     if 'KUBERNETES_PORT' in os.environ:
         config.load_incluster_config()
         definition = '/tmp/guitar.yml'
